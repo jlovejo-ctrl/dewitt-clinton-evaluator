@@ -1,0 +1,53 @@
+SUPER SIMPLE SETUP - NO FILE EDITING NEEDED!
+=============================================
+
+Good news! This version is MUCH easier - you don't need to edit any files!
+
+STEP 1: Unzip the folder
+- Download dewitt-clinton-evaluator-FINAL.zip
+- Double-click to unzip it
+- You'll see a folder with your files
+
+STEP 2: Open the app
+- Double-click "index.html"
+- It opens in your browser
+
+STEP 3: Enter your info
+You'll see TWO boxes:
+1. Access Password: clinton2025 (or whatever you changed it to)
+2. Claude API Key: Paste your API key here (the sk-ant-api03-xxx thing)
+
+STEP 4: Click "Access Tool"
+That's it! You're in!
+
+STEP 5: Use the app
+- Upload lesson plan + transcript
+- Answer the questions
+- Generate evaluations
+
+=============================================
+TO USE IT ANYWHERE (NOT JUST YOUR COMPUTER)
+=============================================
+
+Right now it only works on your computer. To make it work from anywhere:
+
+1. Go to vercel.com
+2. Sign up (free)
+3. Upload these files
+4. Share the URL with your team
+
+Want help with that? Just ask!
+
+=============================================
+TO CHANGE THE PASSWORD
+=============================================
+
+If you want a different password than "clinton2025":
+
+1. Right-click index.html
+2. Open with TextEdit (Mac) or Notepad (Windows)  
+3. Find: if (password !== 'clinton2025')
+4. Change 'clinton2025' to your password
+5. Save
+
+That's it! Much easier! 🎉

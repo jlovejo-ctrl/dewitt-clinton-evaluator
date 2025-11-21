@@ -1,0 +1,199 @@
+DEWITT CLINTON HIGH SCHOOL - THE EVALUATOR
+Setup Guide for Non-Technical Users
+==========================================
+
+This guide will walk you through setting up your evaluation tool. It takes about 15 minutes total.
+
+==========================================
+WHAT YOU'RE BUILDING
+==========================================
+
+A professional web app that:
+✓ Works from anywhere (school, home, phone, tablet)
+✓ Branded with DeWitt Clinton colors, crest, and motto
+✓ Password-protected for your AP team
+✓ Prevents rating inflation
+✓ Produces 3020-A compliant observations
+✓ Costs about $20-30/month total for unlimited use
+
+==========================================
+STEP 1: GET A CLAUDE API KEY (5 minutes)
+==========================================
+
+1. Go to: https://console.anthropic.com
+2. Click "Sign Up" (top right)
+3. Create an account with your email
+4. Once logged in, click "API Keys" in the left sidebar
+5. Click "Create Key"
+6. Give it a name like "DeWitt Clinton Evaluator"
+7. Click "Create Key"
+8. IMPORTANT: Copy the key and save it somewhere safe (you'll need it later)
+   - It looks like: sk-ant-api03-...
+   - You can only see it once!
+
+Cost: First $5 is free, then about $3 per 1000 evaluations
+
+==========================================
+STEP 2: SIGN UP FOR VERCEL (2 minutes)
+==========================================
+
+1. Go to: https://vercel.com
+2. Click "Sign Up" (top right)
+3. Choose "Continue with GitHub" (easiest option)
+   - If you don't have GitHub, create one first at github.com (free)
+4. Follow the prompts to connect your GitHub account
+5. You're now logged into Vercel!
+
+Cost: FREE (Vercel's hobby plan is perfect for this)
+
+==========================================
+STEP 3: DEPLOY YOUR APP (5 minutes)
+==========================================
+
+Option A: Using Vercel's Web Interface (Easiest)
+
+1. Download the "dewitt-clinton-evaluator" folder from this package
+2. Go to: https://vercel.com/new
+3. Click "Add New..." → "Project"
+4. Click "Import" next to "Import from Git Repository" OR just drag the folder
+5. If asked, connect your GitHub account
+6. Upload these files:
+   - index.html
+   - crest.jpeg
+7. Click "Deploy"
+8. Wait 30-60 seconds
+9. You'll see "Congratulations!" with your app's URL
+
+Your app is now live!
+
+==========================================
+STEP 4: ADD YOUR CLAUDE API KEY (3 minutes)
+==========================================
+
+IMPORTANT: Right now, your app won't work because it needs your Claude API key.
+
+Temporary Fix (for testing):
+1. Open the index.html file in a text editor (Notepad, TextEdit, etc.)
+2. Find this line (around line 169):
+   body: JSON.stringify({
+3. Add this line RIGHT BEFORE it:
+   headers: { ...headers, "x-api-key": "YOUR-API-KEY-HERE" },
+4. Replace YOUR-API-KEY-HERE with your actual Claude API key
+5. Re-upload to Vercel
+
+NOTE: This is NOT secure for production. See "Making It Secure" section below.
+
+==========================================
+STEP 5: SET YOUR PASSWORD (1 minute)
+==========================================
+
+1. Open index.html in a text editor
+2. Find this line (around line 42):
+   if (password === 'clinton2025') {
+3. Change 'clinton2025' to your desired password
+4. Save the file
+5. Re-upload to Vercel if you already deployed
+
+Share this password with your AP team!
+
+==========================================
+STEP 6: SHARE WITH YOUR TEAM
+==========================================
+
+1. Copy your Vercel URL (looks like: https://dewitt-clinton-evaluator.vercel.app)
+2. Send it to your APs with the password
+3. They can access it from any device!
+
+==========================================
+USING THE APP
+==========================================
+
+1. Go to the URL
+2. Enter the password
+3. Upload or paste: Lesson plan + Transcript
+4. Answer: MLLs/SWDs? Teacher role?
+5. Choose: Writing Mode or Rating Mode
+6. Select component (and strand if Writing Mode)
+7. Click "Generate Evaluation"
+8. Copy the output to your document
+
+==========================================
+TROUBLESHOOTING
+==========================================
+
+Problem: "Failed to fetch" or API error
+Solution: Make sure your Claude API key is added correctly (Step 4)
+
+Problem: Password not working
+Solution: Check that you saved the file after changing the password
+
+Problem: App looks broken
+Solution: Make sure both index.html and crest.jpeg uploaded together
+
+Problem: Evaluations are inflating ratings
+Solution: Remind the tool: "Be more conservative with ratings"
+
+Problem: Examples are too short
+Solution: Say: "Provide longer exchanges - minimum 6-10 lines"
+
+==========================================
+MAKING IT SECURE (For Production)
+==========================================
+
+The current setup has the API key in the browser code, which is NOT secure long-term.
+
+For production, you should:
+
+1. Create a simple backend API (I can help with this)
+2. Store the API key in Vercel Environment Variables
+3. Have the frontend call your backend, which then calls Claude
+
+This prevents anyone from stealing your API key by viewing the page source.
+
+Want help with this? Let me know and I'll create the secure backend version!
+
+==========================================
+COSTS
+==========================================
+
+Vercel Hosting: FREE
+Claude API: 
+  - First $5 free
+  - Then ~$0.003 per evaluation
+  - 1,000 evaluations = ~$3
+  - Estimated $20-30/month for 10 APs doing 2-3 observations/week
+
+Total: ~$20-30/month for unlimited team access
+
+==========================================
+UPDATING THE APP
+==========================================
+
+To make changes:
+1. Edit the index.html file on your computer
+2. Go to vercel.com → Your project
+3. Click "Deployments" tab
+4. Drag your updated index.html file
+5. It will automatically redeploy (takes 30 seconds)
+
+==========================================
+SUPPORT
+==========================================
+
+If you get stuck:
+1. Check the troubleshooting section above
+2. Email me (or whoever set this up for you)
+3. Check Vercel's help docs: https://vercel.com/docs
+
+==========================================
+NEXT STEPS
+==========================================
+
+Once it's working:
+1. Test it with one observation
+2. Share with 1-2 other APs to test
+3. Gather feedback
+4. Make any adjustments
+5. Roll out to full team
+
+You did it! Your evaluation tool is live! 🎉

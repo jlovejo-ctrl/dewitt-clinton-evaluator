@@ -1,0 +1,76 @@
+DEWITT CLINTON HS - THE EVALUATOR
+Quick Reference Card
+=====================================
+
+📱 ACCESS THE TOOL
+URL: [Your Vercel URL will go here after deployment]
+Password: clinton2025 (or whatever you changed it to)
+
+=====================================
+QUICK START (5 steps)
+=====================================
+
+1. LOGIN → Enter password
+
+2. UPLOAD → Lesson plan + Transcript
+   (Can upload .txt files OR paste directly)
+
+3. COMPLIANCE QUESTIONS
+   ✓ MLLs/SWDs present?
+   ✓ Teacher role?
+
+4. CHOOSE MODE
+   📝 Writing Mode = You pick strand, get evidence
+   ✅ Rating Mode = Full component analysis
+
+5. GENERATE → Copy output to Word
+
+=====================================
+TIPS FOR BEST RESULTS
+=====================================
+
+✓ Upload complete transcripts (not summaries)
+✓ Include full lesson plans
+✓ Use exact Danielson rubric language in Writing Mode
+✓ Do ONE component at a time in Rating Mode
+
+=====================================
+IF RATINGS SEEM HIGH
+=====================================
+
+Add this reminder:
+"Use extremely conservative ratings. Apply preponderance of evidence to determine ratings."
+
+=====================================
+IF EXAMPLES ARE TOO SHORT
+=====================================
+
+Say: "Provide complete exchanges - minimum 6-10 lines showing the full instructional pattern."
+
+=====================================
+COMMON ISSUES
+=====================================
+
+🔴 "Failed to fetch" = API key issue (contact tech support)
+🟡 Password not working = Check you're using the right one
+🟢 App working but slow = Normal for long transcripts
+
+=====================================
+SHARE WITH COLLEAGUES
+=====================================
+
+Just send them:
+1. The URL
+2. The password
+3. This quick reference card
+
+That's it!
+
+=====================================
+SUPPORT
+=====================================
+
+Technical issues? Check SETUP-GUIDE.txt
+or contact [your tech contact here]
+
+Sine Labore Nihil 🎓
