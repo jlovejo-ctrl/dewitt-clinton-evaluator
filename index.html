@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeWitt Clinton HS - The Evaluator</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'clinton-red': '#DC143C',
+                        'clinton-black': '#000000',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        function DanielsonEvaluator() {
+          const [isAuthenticated, setIsAuthenticated] = useState(false);
+          const [password, setPassword] = useState('');
+          const [passwordError, setPasswordError] = useState('');
+          const [apiKey, setApiKey] = useState('');
+          
+          const [step, setStep] = useState('upload');
+          const [lessonPlan, setLessonPlan] = useState('');
+          const [transcript, setTranscript] = useState('');
+          const [hasMLLsSWDs, setHasMLLsSWDs] = useState('');
+          const [teacherRole, setTeacherRole] = useState('');
+          const [mode, setMode] = useState('');
+          const [component, setComponent] = useState('');
+          const [strand, setStrand] = useState('');
+          const [isProcessing, setIsProcessing] = useState(false);
+          const [output, setOutput] = useState('');
+
+          const components = [
+            { id: '1a', name: '1a: Demonstrating Knowledge of Content and Pedagogy' },
+            { id: '1e', name: '1e: Designing Coherent Instruction' },
+            { id: '2a', name: '2a: Creating an Environment of Respect and Rapport' },
+            { id: '2d', name: '2d: Managing Student Behavior' },
+            { id: '3b', name: '3b: Using Questioning and Discussion Techniques' },
+            { id: '3c', name: '3c: Engaging Students in Learning' },
+            { id: '3d', name: '3d: Using Assessment in Instruction' }
+          ];
+
+          const handleLogin = (e) => {
+            e.preventDefault();
+            // Check password
+            if (password !== 'clinton2025') {
+              setPasswordError('Incorrect password. Please try again.');
+              return;
+            }
+            // Check API key
+            if (!apiKey || !apiKey.startsWith('sk-ant-')) {
+              setPasswordError('Please enter a valid Claude API key (starts with sk-ant-)');
+              return;
+            }
+            // Success
+            setIsAuthenticated(true);
+            setPasswordError('');
+          };
+
+          const handleFileUpload = (e, type) => {
+            const file = e.target.files[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                if (type === 'lessonPlan') {
+                  setLessonPlan(event.target.result);
+                } else {
+                  setTranscript(event.target.result);
+                }
+              };
+              reader.readAsText(file);
+            }
+          };
+
+          const canProceedToCompliance = lessonPlan && transcript;
+          const canProceedToMode = hasMLLsSWDs && teacherRole;
+          const canProcess = mode && component && (mode === 'rating' || strand);
+
+          const processEvaluation = async () => {
+            setIsProcessing(true);
+            
+            const systemPrompt = `You are The Evaluator, a top 0.1% NYCDOE Assistant Principal operating under the 2013 Danielson Framework. You are EXTREMELY CONSERVATIVE with ratings and NEVER inflate scores.
+
+CRITICAL ANTI-INFLATION RULES:
+1. DEFAULT TO LOWER: Start at Ineffective, only raise if evidence COMPLETELY meets ALL criteria
+2. Highly Effective: Only when evidence is OVERWHELMING, SUSTAINED, students INITIATE without prompting
+3. Effective: Only when MOST students engaged in rigorous work with CONSISTENT teacher support
+4. Developing: Use when some alignment exists but with gaps/inconsistency
+5. Ineffective: Use when fundamental elements missing or misaligned
+6. PREPONDERANCE RULE: When evidence splits between levels, apply preponderance of evidence to determine the rating
+7. A single weak strand can determine the component rating if deficiencies are repeated, instructionally significant, or aligned to Ineffective indicators
+
+EVIDENCE QUALITY RULES:
+1. COMPLETE EXCHANGES: Minimum 6-10 lines showing full pattern (Teacher→Student→Teacher→Student until complete)
+2. REVIEW 5-7 EXAMPLES before selecting the 2 STRONGEST (not first plausible)
+3. VERBATIM ONLY: Use exact quotes only. If you can't find exact text, state "No evidence found"
+4. NEVER paraphrase, summarize, or "clean up" dialogue
+5. Preserve ALL speaker labels exactly (T:, S:, Student 1:, etc.)
+6. Never truncate mid-exchange
+
+TONE: Lovejoy Professional
+- Formal, unsentimental, evaluative
+- Claim → evidence → conclusion structure
+- No hedging, no filler words (overall, notably, clearly)
+- Definitive judgments tied to rubric language
+
+${mode === 'writing' ? `
+WRITING MODE ACTIVATED
+Component: ${component}
+Strand: "${strand}"
+
+TASK:
+1. Search the transcript for 5-7 potential examples that relate to this strand
+2. Select the 2 STRONGEST, most complete exchanges that demonstrate the strand
+3. Each example must be a full instructional exchange (6-10+ lines minimum)
+4. Format as:
+
+"${strand}"
+
+Example 1:
+[Complete verbatim exchange from ${component === '1a' || component === '1e' ? 'lesson plan' : 'transcript'}]
+
+Example 2:
+[Complete verbatim exchange from ${component === '1a' || component === '1e' ? 'transcript' : 'transcript'}]
+
+[Analysis paragraph in Lovejoy Professional tone - 4-6 sentences connecting evidence to strand. No hedging. Banned words: overall, notably, clearly, appears, seems]
+
+ABSENCE PROTOCOL:
+If no evidence exists for this strand:
+- Still output the strand
+- For 2a/2d: "There was no evidence of disrespectful or off-task behavior during the observed period."
+- For 3b/3d: "The observed lesson did not include structures or opportunities for students to [action]."
+- For others: "No evidence was observed for this strand during the lesson."
+` : `
+RATING MODE ACTIVATED
+Component: ${component}
+
+TASK:
+1. Analyze ALL strands for this component
+2. For EACH strand, provide rating in this format:
+
+[STRAND NAME]
+Level: [I/D/E/HE]
+"[Exact rubric language]"
+Evidence: [2-3 complete exchanges showing pattern, each 6-10+ lines]
+Justification: [Why this level and NOT next higher]
+
+3. After all strands, provide:
+
+OVERALL COMPONENT RATING: [I/D/E/HE]
+
+Summary: [5-7 sentences using preponderance logic, explaining why the preponderance of evidence supports this rating and why higher rating was not warranted]
+
+CONSERVATIVE RATING LOGIC:
+- The preponderance of evidence determines the rating
+- A single strand can determine the component rating if deficiencies are repeated, instructionally significant, or aligned to Ineffective indicators
+- Balance strengths/weaknesses equally
+- Never rate on isolated strengths - look for sustained patterns
+- Prohibit positive drift
+`}
+
+CLASS CONTEXT:
+- MLLs/SWDs present: ${hasMLLsSWDs}
+- Teacher role: ${teacherRole}
+
+LESSON PLAN:
+${lessonPlan}
+
+TRANSCRIPT:
+${transcript}`;
+
+            try {
+              const response = await fetch("https://api.anthropic.com/v1/messages", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-api-key": apiKey,
+                  "anthropic-version": "2023-06-01"
+                },
+                body: JSON.stringify({
+                  model: "claude-sonnet-4-20250514",
+                  max_tokens: 4000,
+                  messages: [
+                    { 
+                      role: "user", 
+                      content: systemPrompt
+                    }
+                  ]
+                })
+              });
+
+              const data = await response.json();
+              
+              if (data.error) {
+                setOutput(`Error: ${data.error.message || 'API request failed'}`);
+              } else {
+                setOutput(data.content[0].text);
+              }
+            } catch (error) {
+              setOutput(`Error: ${error.message}`);
+            } finally {
+              setIsProcessing(false);
+            }
+          };
+
+          const copyToClipboard = () => {
+            navigator.clipboard.writeText(output);
+            alert('Copied to clipboard!');
+          };
+
+          const CheckIcon = () => (
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+            </svg>
+          );
+
+          // Login Screen
+          if (!isAuthenticated) {
+            return (
+              <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-4">
+                <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
+                  <div className="text-center mb-8">
+                    <img src="crest.jpeg" alt="DeWitt Clinton HS Crest" className="w-32 h-32 mx-auto mb-4 object-contain" />
+                    <h1 className="text-2xl font-bold text-clinton-black mb-2">DeWitt Clinton High School</h1>
+                    <p className="text-gray-600 italic mb-4">Sine Labore Nihil</p>
+                    <div className="h-1 w-24 bg-clinton-red mx-auto mb-4"></div>
+                    <h2 className="text-xl font-semibold text-gray-800">The Evaluator</h2>
+                    <p className="text-sm text-gray-600 mt-2">Danielson Framework Observation Tool</p>
+                  </div>
+
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Access Password
+                      </label>
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinton-red focus:border-transparent"
+                        placeholder="Enter password"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Claude API Key
+                      </label>
+                      <input
+                        type="password"
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinton-red focus:border-transparent"
+                        placeholder="sk-ant-api03-..."
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Get your API key from console.anthropic.com
+                      </p>
+                    </div>
+
+                    {passwordError && (
+                      <p className="text-sm text-red-600">{passwordError}</p>
+                    )}
+
+                    <button
+                      type="submit"
+                      className="w-full bg-clinton-red text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors"
+                    >
+                      Access Tool
+                    </button>
+                  </form>
+
+                  <p className="text-xs text-gray-500 text-center mt-6">
+                    For authorized NYCDOE administrators only
+                  </p>
+                </div>
+              </div>
+            );
+          }
+
+          // Main Application
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+              {/* Header */}
+              <div className="bg-clinton-black text-white py-4 shadow-lg">
+                <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <img src="crest.jpeg" alt="DeWitt Clinton HS Crest" className="w-12 h-12 object-contain" />
+                    <div>
+                      <h1 className="text-xl font-bold">DeWitt Clinton High School</h1>
+                      <p className="text-sm text-gray-300 italic">Sine Labore Nihil</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-semibold">The Evaluator</p>
+                    <p className="text-xs text-gray-300">Danielson Framework Tool</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="max-w-5xl mx-auto p-8">
+                <div className="bg-white rounded-lg shadow-xl p-8 mb-6">
+                  {/* Progress Steps */}
+                  <div className="flex items-center justify-between mb-8">
+                    <div className={`flex items-center ${step === 'upload' ? 'text-clinton-red' : 'text-gray-400'}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${canProceedToCompliance ? 'bg-clinton-red text-white' : 'bg-gray-200'}`}>
+                        {canProceedToCompliance ? <CheckIcon /> : <span>1</span>}
+                      </div>
+                      <span className="ml-2 font-medium">Upload</span>
+                    </div>
+                    <div className="flex-1 h-1 mx-4 bg-gray-200"></div>
+                    <div className={`flex items-center ${step === 'compliance' ? 'text-clinton-red' : 'text-gray-400'}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${canProceedToMode ? 'bg-clinton-red text-white' : 'bg-gray-200'}`}>
+                        {canProceedToMode ? <CheckIcon /> : <span>2</span>}
+                      </div>
+                      <span className="ml-2 font-medium">Compliance</span>
+                    </div>
+                    <div className="flex-1 h-1 mx-4 bg-gray-200"></div>
+                    <div className={`flex items-center ${step === 'evaluate' ? 'text-clinton-red' : 'text-gray-400'}`}>
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">3</div>
+                      <span className="ml-2 font-medium">Evaluate</span>
+                    </div>
+                  </div>
+
+                  {/* Step 1: Upload */}
+                  {step === 'upload' && (
+                    <div className="space-y-6">
+                      <h2 className="text-xl font-semibold text-gray-800 mb-4">Step 1: Upload or Paste Source Materials</h2>
+                      
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                        <label className="block mb-2 font-medium text-gray-700">Lesson Plan</label>
+                        <input
+                          type="file"
+                          accept=".txt"
+                          onChange={(e) => handleFileUpload(e, 'lessonPlan')}
+                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-clinton-red hover:file:bg-red-100 mb-3"
+                        />
+                        <textarea
+                          value={lessonPlan}
+                          onChange={(e) => setLessonPlan(e.target.value)}
+                          placeholder="Or paste lesson plan text here..."
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinton-red"
+                          rows="5"
+                        />
+                        {lessonPlan && <p className="mt-2 text-green-600 text-sm">✓ Lesson plan loaded ({lessonPlan.length} characters)</p>}
+                      </div>
+
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                        <label className="block mb-2 font-medium text-gray-700">Transcript / Observation Notes</label>
+                        <input
+                          type="file"
+                          accept=".txt"
+                          onChange={(e) => handleFileUpload(e, 'transcript')}
+                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-clinton-red hover:file:bg-red-100 mb-3"
+                        />
+                        <textarea
+                          value={transcript}
+                          onChange={(e) => setTranscript(e.target.value)}
+                          placeholder="Or paste transcript text here..."
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinton-red"
+                          rows="8"
+                        />
+                        {transcript && <p className="mt-2 text-green-600 text-sm">✓ Transcript loaded ({transcript.length} characters)</p>}
+                      </div>
+
+                      <button
+                        onClick={() => setStep('compliance')}
+                        disabled={!canProceedToCompliance}
+                        className={`w-full py-3 rounded-lg font-semibold ${canProceedToCompliance ? 'bg-clinton-red text-white hover:bg-red-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
+                      >
+                        Continue to Compliance Questions
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Step 2: Compliance */}
+                  {step === 'compliance' && (
+                    <div className="space-y-6">
+                      <h2 className="text-xl font-semibold text-gray-800 mb-4">Step 2: Compliance Questions</h2>
+
+                      <div>
+                        <label className="block mb-2 font-medium text-gray-700">
+                          Does the observed class include any Multilingual Learners (MLLs) or students with disabilities (SWDs)?
+                        </label>
+                        <select
+                          value={hasMLLsSWDs}
+                          onChange={(e) => setHasMLLsSWDs(e.target.value)}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinton-red"
+                        >
+                          <option value="">Select...</option>
+                          <option value="Yes, it includes MLLs">Yes, it includes MLLs</option>
+                          <option value="Yes, SWDs">Yes, SWDs</option>
+                          <option value="Yes, both MLLs and SWDs">Yes, both MLLs and SWDs</option>
+                          <option value="No">No</option>
+                          <option value="Unknown">Unknown</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block mb-2 font-medium text-gray-700">
+                          Is the observed teacher the content teacher, a co-teacher, a special education teacher, or an ENL/MLL teacher?
+                        </label>
+                        <select
+                          value={teacherRole}
+                          onChange={(e) => setTeacherRole(e.target.value)}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinton-red"
+                        >
+                          <option value="">Select...</option>
+                          <option value="Content teacher">Content teacher</option>
+                          <option value="Co-teacher">Co-teacher</option>
+                          <option value="Special education teacher">Special education teacher</option>
+                          <option value="ENL/MLL teacher">ENL/MLL teacher</option>
+                          <option value="Unknown">Unknown</option>
+                        </select>
+                      </div>
+
+                      <div className="flex gap-4">
+                        <button
+                          onClick={() => setStep('upload')}
+                          className="flex-1 py-3 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300"
+                        >
+                          Back
+                        </button>
+                        <button
+                          onClick={() => setStep('evaluate')}
+                          disabled={!canProceedToMode}
+                          className={`flex-1 py-3 rounded-lg font-semibold ${canProceedToMode ? 'bg-clinton-red text-white hover:bg-red-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
+                        >
+                          Continue to Evaluation
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 3: Evaluate */}
+                  {step === 'evaluate' && (
+                    <div className="space-y-6">
+                      <h2 className="text-xl font-semibold text-gray-800 mb-4">Step 3: Select Mode and Component</h2>
+
+                      <div>
+                        <label className="block mb-2 font-medium text-gray-700">Mode</label>
+                        <div className="grid grid-cols-2 gap-4">
+                          <button
+                            onClick={() => {
+                              setMode('writing');
+                              setStrand('');
+                            }}
+                            className={`p-4 rounded-lg border-2 font-semibold ${mode === 'writing' ? 'border-clinton-red bg-red-50 text-clinton-red' : 'border-gray-300 hover:border-clinton-red'}`}
+                          >
+                            <div className="text-3xl mb-2">📝</div>
+                            Writing Mode
+                            <p className="text-xs font-normal mt-1">You select strand, I find evidence</p>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setMode('rating');
+                              setStrand('');
+                            }}
+                            className={`p-4 rounded-lg border-2 font-semibold ${mode === 'rating' ? 'border-clinton-red bg-red-50 text-clinton-red' : 'border-gray-300 hover:border-clinton-red'}`}
+                          >
+                            <div className="text-3xl mb-2">✅</div>
+                            Rating Mode
+                            <p className="text-xs font-normal mt-1">I analyze all strands and rate</p>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block mb-2 font-medium text-gray-700">Component</label>
+                        <select
+                          value={component}
+                          onChange={(e) => setComponent(e.target.value)}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinton-red"
+                        >
+                          <option value="">Select component...</option>
+                          {components.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {mode === 'writing' && (
+                        <div>
+                          <label className="block mb-2 font-medium text-gray-700">
+                            Rubric Strand (paste exact Danielson language)
+                          </label>
+                          <textarea
+                            value={strand}
+                            onChange={(e) => setStrand(e.target.value)}
+                            placeholder='Example: "The teacher displays solid knowledge of the important concepts in the discipline and how these relate to one another."'
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinton-red"
+                            rows="3"
+                          />
+                          <p className="text-sm text-gray-600 mt-1">
+                            Copy the exact rubric strand from Appendix A (including all punctuation)
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div className="flex items-start">
+                          <div className="text-yellow-600 mr-3 flex-shrink-0 mt-0.5">⚠️</div>
+                          <div className="text-sm text-yellow-800">
+                            <p className="font-semibold mb-1">Conservative Rating Philosophy</p>
+                            <p>This tool applies preponderance of evidence to prevent rating inflation. Evidence must completely meet criteria to warrant higher ratings.</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-4">
+                        <button
+                          onClick={() => setStep('compliance')}
+                          className="flex-1 py-3 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300"
+                        >
+                          Back
+                        </button>
+                        <button
+                          onClick={processEvaluation}
+                          disabled={!canProcess || isProcessing}
+                          className={`flex-1 py-3 rounded-lg font-semibold ${canProcess && !isProcessing ? 'bg-clinton-red text-white hover:bg-red-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
+                        >
+                          {isProcessing ? 'Processing...' : 'Generate Evaluation'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Output */}
+                {output && (
+                  <div className="bg-white rounded-lg shadow-xl p-8">
+                    <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-xl font-semibold text-gray-800">Evaluation Output</h2>
+                      <button
+                        onClick={copyToClipboard}
+                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium"
+                      >
+                        Copy to Clipboard
+                      </button>
+                    </div>
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                      <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800">{output}</pre>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setOutput('');
+                        setMode('');
+                        setComponent('');
+                        setStrand('');
+                      }}
+                      className="mt-4 w-full py-3 bg-clinton-red text-white rounded-lg hover:bg-red-700 font-semibold"
+                    >
+                      Start New Evaluation
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        }
+
+        ReactDOM.render(<DanielsonEvaluator />, document.getElementById('root'));
+    </script>
+</body>
+</html>
